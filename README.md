@@ -28,4 +28,6 @@ The `.github` repository must also remain public for the organization profile RE
 
 The license in this repository applies only to the `.github` repository content, such as the organization profile README and repository guidance.
 
+See [LICENSE.md](LICENSE.md) for the license text that applies to this repository.
+
 It does not replace or override the licenses of the six implementation repositories, which remain subject to their own upstream and repository-specific license terms.
