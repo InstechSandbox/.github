@@ -47,3 +47,9 @@ The current stable local working baseline is tagged in each of the six implement
 - `local-e2e-baseline-2026-03-27`
 
 See the project docs for the full tag and commit reference table.
+
+## Licensing Note
+
+The content in this `.github` repository is licensed separately from the implementation repositories.
+
+Each implementation repository keeps its own existing license obligations from its upstream project and repository history.

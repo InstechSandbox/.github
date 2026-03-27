@@ -23,3 +23,9 @@ The `.github` repository must also remain public for the organization profile RE
 - Public org overview: `profile/README.md`
 - Cross-repo project documentation: `InstechSandbox/project-docs`
 - Deep local deployment rationale: `InstechSandbox/project-docs/docs/Local_Deployment_Notes.md`
+
+## Licensing Scope
+
+The license in this repository applies only to the `.github` repository content, such as the organization profile README and repository guidance.
+
+It does not replace or override the licenses of the six implementation repositories, which remain subject to their own upstream and repository-specific license terms.
