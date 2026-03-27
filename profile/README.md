@@ -37,6 +37,7 @@ This work is a proof of concept and is not production-ready.
 
 - [Project Docs Landing Page](https://github.com/InstechSandbox/project-docs)
 - [Local Deployment Notes](https://github.com/InstechSandbox/project-docs/blob/main/docs/Local_Deployment_Notes.md)
+- [Licensing Notes](https://github.com/InstechSandbox/project-docs/blob/main/docs/Licensing_Notes.md)
 
 The Local Deployment Notes document explains the six-repository commit set that produced the current stable local working build, why those changes were necessary, and which baseline tags identify that state.
 
