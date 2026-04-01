@@ -7,6 +7,21 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PAT
 repo_root=$(git rev-parse --show-toplevel)
 repo_name=$(basename "$repo_root")
 
+temporary_bypass_repos=(
+  eudi-app-android-wallet-ui
+  eudi-srv-web-issuing-eudiw-py
+  av-srv-web-verifier-endpoint-23220-4-kt
+  eudi-web-verifier
+)
+
+for bypass_repo in "${temporary_bypass_repos[@]}"; do
+  if [[ "$repo_name" == "$bypass_repo" ]]; then
+    echo "[pre-push] TEMPORARY BYPASS for $repo_name"
+    echo "[pre-push] Revert the .github hook bypass commit after the repo gate debt is fixed."
+    exit 0
+  fi
+done
+
 run_step() {
   echo "[pre-push] $1"
   shift

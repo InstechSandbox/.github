@@ -4,10 +4,21 @@ set -euo pipefail
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-repo_root=$(git rev-parse --show-toplevel)
+git_bin=$(whence -p git || true)
+grep_bin=$(whence -p grep || true)
+
+if [[ -z "$git_bin" ]]; then
+  git_bin=/usr/bin/git
+fi
+
+if [[ -z "$grep_bin" ]]; then
+  grep_bin=/usr/bin/grep
+fi
+
+repo_root=$($git_bin rev-parse --show-toplevel)
 repo_name=$(basename "$repo_root")
 
-mapfile=( ${(f)$(git diff --cached --name-only --diff-filter=ACMR)} )
+mapfile=( ${(f)$($git_bin diff --cached --name-only --diff-filter=ACMR)} )
 if [[ ${#mapfile[@]} -eq 0 ]]; then
   exit 0
 fi
@@ -40,7 +51,7 @@ for path in "${mapfile[@]}"; do
       ;;
   esac
 
-  if git diff --cached -- "$path" | grep -qE '^(\+| ).*(<<<<<<<|=======|>>>>>>>)'; then
+  if $git_bin diff --cached -- "$path" | $grep_bin -qE '^(\+| ).*(<<<<<<<|=======|>>>>>>>)'; then
     echo "Blocked conflict markers in $path"
     exit 1
   fi
