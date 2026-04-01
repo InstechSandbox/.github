@@ -1,0 +1,53 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+repo_name=$(basename "$repo_root")
+
+mapfile=( ${(f)$(git diff --cached --name-only --diff-filter=ACMR)} )
+if [[ ${#mapfile[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+for path in "${mapfile[@]}"; do
+  case "$repo_name:$path" in
+    *:.DS_Store)
+      echo "Blocked: .DS_Store must not be committed"
+      exit 1
+      ;;
+    eudi-srv-issuer-oidc-py:certs/*.crt|eudi-srv-issuer-oidc-py:certs/*.key|eudi-srv-issuer-oidc-py:certs/*.pem|eudi-srv-issuer-oidc-py:private/*jwks.json|eudi-srv-issuer-oidc-py:static/jwks.json)
+      echo "Blocked local-only auth artifact: $path"
+      exit 1
+      ;;
+    eudi-srv-web-issuing-eudiw-py:app/private/*jwks.json|eudi-srv-web-issuing-eudiw-py:app/static/jwks.json|eudi-srv-web-issuing-eudiw-py:local/*)
+      echo "Blocked local-only issuer backend artifact: $path"
+      exit 1
+      ;;
+    eudi-srv-web-issuing-frontend-eudiw-py:backend.crt|eudi-srv-web-issuing-frontend-eudiw-py:custom_ca_bundle.pem|eudi-srv-web-issuing-frontend-eudiw-py:server.crt|eudi-srv-web-issuing-frontend-eudiw-py:server.key|eudi-srv-web-issuing-frontend-eudiw-py:app/static/jwks.json)
+      echo "Blocked local-only issuer frontend artifact: $path"
+      exit 1
+      ;;
+    av-srv-web-verifier-endpoint-23220-4-kt:docker/haproxy.pem|av-srv-web-verifier-endpoint-23220-4-kt:docker/local/certs/*)
+      echo "Blocked local-only verifier endpoint artifact: $path"
+      exit 1
+      ;;
+    project-docs:.local/*|project-docs:scripts/local-demo.env)
+      echo "Blocked local-only project-docs artifact: $path"
+      exit 1
+      ;;
+  esac
+
+  if git diff --cached -- "$path" | grep -qE '^(\+| ).*(<<<<<<<|=======|>>>>>>>)'; then
+    echo "Blocked conflict markers in $path"
+    exit 1
+  fi
+
+  case "$path" in
+    *.sh)
+      bash -n "$repo_root/$path"
+      ;;
+  esac
+done
+
+exit 0

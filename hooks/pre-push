@@ -1,0 +1,54 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+repo_name=$(basename "$repo_root")
+
+run_step() {
+  echo "[pre-push] $1"
+  shift
+  "$@"
+}
+
+python_cmd() {
+  if [[ -x "$repo_root/.venv/bin/python" ]]; then
+    echo "$repo_root/.venv/bin/python"
+  else
+    command -v python3
+  fi
+}
+
+case "$repo_name" in
+  eudi-web-verifier)
+    run_step "Verifier UI lint" npx ng lint
+    run_step "Verifier UI tests" npx ng test --watch=false --browsers=ChromeHeadless
+    ;;
+  av-srv-web-verifier-endpoint-23220-4-kt)
+    run_step "Verifier endpoint tests" ./gradlew test
+    ;;
+  eudi-app-android-wallet-ui)
+    run_step "Wallet tests" ./gradlew test
+    ;;
+  eudi-srv-issuer-oidc-py)
+    if [[ -x "$repo_root/validate_local_build.sh" ]]; then
+      run_step "Auth server validation smoke" "$repo_root/validate_local_build.sh"
+    fi
+    ;;
+  eudi-srv-web-issuing-eudiw-py)
+    py=$(python_cmd)
+    run_step "Issuer backend tests" "$py" -m pytest -q
+    ;;
+  eudi-srv-web-issuing-frontend-eudiw-py)
+    run_step "Issuer frontend asset build" npm run build
+    ;;
+  project-docs)
+    while IFS= read -r -d '' script; do
+      run_step "Shell syntax ${script#$repo_root/}" bash -n "$script"
+    done < <(find "$repo_root/scripts" -name '*.sh' -print0)
+    ;;
+  .github)
+    ;;
+esac
+
+exit 0
