@@ -6,6 +6,7 @@ This is the special `.github` repository for the `InstechSandbox` organization.
 
 - `profile/README.md` controls the public GitHub organization landing page.
 - The root `README.md` documents how this special repository is structured.
+- Reusable GitHub Actions workflows for the `cloud-build` stream should live here rather than being duplicated across application repositories.
 - Cross-repository technical documentation should live in the `project-docs` repository, not in the org profile.
 
 ## Why The Org Landing Page Was Not Rendering
@@ -22,6 +23,7 @@ The `.github` repository must also remain public for the organization profile RE
 
 - Public org overview: `profile/README.md`
 - Cross-repo project documentation: `InstechSandbox/project-docs`
+- Cloud build and AWS deployment design: `InstechSandbox/project-docs/docs/Cloud_Build_Deployment_Runbook.md`
 - Deep local deployment rationale: `InstechSandbox/project-docs/docs/Local_Deployment_Notes.md`
 
 ## Licensing Scope
