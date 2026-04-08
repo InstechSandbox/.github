@@ -32,4 +32,4 @@ The license in this repository applies only to the `.github` repository content,
 
 See [LICENSE.md](LICENSE.md) for the license text that applies to this repository.
 
-It does not replace or override the licenses of the six implementation repositories, which remain subject to their own upstream and repository-specific license terms.
+It does not replace or override the licenses of the implementation repositories, which remain subject to their own upstream and repository-specific license terms.

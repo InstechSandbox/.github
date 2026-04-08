@@ -25,7 +25,8 @@ This work is a proof of concept and is not production-ready.
 
 ## Repositories
 
-- [eudi-app-android-wallet-ui](https://github.com/InstechSandbox/eudi-app-android-wallet-ui) - Android wallet used for local issuance and verifier presentation testing
+- [eudi-app-android-wallet-ui](https://github.com/InstechSandbox/eudi-app-android-wallet-ui) - Android wallet used for local issuance and verifier presentation testing, and small-scale tester distribution
+- [eudi-app-ios-wallet-ui](https://github.com/InstechSandbox/eudi-app-ios-wallet-ui) - iOS wallet fork being enabled for local issuance, presentation, and small-scale tester distribution
 - [eudi-srv-issuer-oidc-py](https://github.com/InstechSandbox/eudi-srv-issuer-oidc-py) - local OAuth and authorization server used by the issuance flow
 - [eudi-srv-web-issuing-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-eudiw-py) - credential issuer backend
 - [eudi-srv-web-issuing-frontend-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-frontend-eudiw-py) - issuer frontend and metadata surface
@@ -38,6 +39,7 @@ This work is a proof of concept and is not production-ready.
 - [Project Docs Landing Page](https://github.com/InstechSandbox/project-docs)
 - [Local Deployment Notes](https://github.com/InstechSandbox/project-docs/blob/main/docs/Local_Deployment_Notes.md)
 - [Licensing Notes](https://github.com/InstechSandbox/project-docs/blob/main/docs/Licensing_Notes.md)
+- [Mobile App Distribution Compliance](https://github.com/InstechSandbox/project-docs/blob/main/docs/Mobile_App_Distribution_Compliance.md)
 
 The Local Deployment Notes document explains the six-repository commit set that produced the current stable local working build, why those changes were necessary, and which baseline tags identify that state.
 
@@ -53,4 +55,4 @@ See the project docs for the full tag and commit reference table.
 
 The content in this `.github` repository is licensed separately from the implementation repositories.
 
-Each implementation repository keeps its own existing license obligations from its upstream project and repository history.
+Each implementation repository keeps its own existing license obligations from its upstream project and repository history, including the `EUPL-1.2` obligations on the Android and iOS wallet forks.
