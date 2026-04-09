@@ -1,0 +1,98 @@
+name: Reusable Deployment Scaffold
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment name.
+        required: true
+        type: string
+      component:
+        description: Deployable component name.
+        required: true
+        type: string
+      artifact-kind:
+        description: Artifact type such as container-image or mobile-bundle.
+        required: true
+        type: string
+      artifact-ref:
+        description: Immutable artifact reference that a future deploy workflow should consume.
+        required: true
+        type: string
+      deploy-repository:
+        description: Repository expected to own the eventual deployment automation.
+        required: false
+        type: string
+        default: InstechSandbox/instechsandbox-eudi-deploy
+      smoke-target:
+        description: Optional smoke URL or route hint for post-deploy validation.
+        required: false
+        type: string
+        default: ''
+      notes:
+        description: Optional deployment notes.
+        required: false
+        type: string
+        default: ''
+    outputs:
+      manifest-name:
+        description: Uploaded deployment manifest filename.
+        value: ${{ jobs.scaffold.outputs.manifest-name }}
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    outputs:
+      manifest-name: ${{ steps.manifest.outputs.manifest-name }}
+
+    steps:
+      - name: Validate scaffold inputs
+        run: |
+          if [[ "${{ inputs.environment }}" != "test" ]]; then
+            echo "Only the phase-1 test environment is scaffolded at this stage." >&2
+            exit 1
+          fi
+
+      - name: Create deployment manifest
+        id: manifest
+        run: |
+          manifest_name="deploy-${{ inputs.component }}-${{ inputs.environment }}.json"
+          cat > "$manifest_name" <<EOF
+          {
+            "source_repository": "${{ github.repository }}",
+            "source_ref": "${{ github.ref_name }}",
+            "source_sha": "${{ github.sha }}",
+            "environment": "${{ inputs.environment }}",
+            "component": "${{ inputs.component }}",
+            "artifact_kind": "${{ inputs.artifact-kind }}",
+            "artifact_ref": "${{ inputs.artifact-ref }}",
+            "deploy_repository": "${{ inputs.deploy-repository }}",
+            "smoke_target": "${{ inputs.smoke-target }}",
+            "notes": "${{ inputs.notes }}"
+          }
+          EOF
+          echo "manifest-name=$manifest_name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deployment scaffold artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-scaffold-${{ inputs.component }}-${{ inputs.environment }}
+          path: ${{ steps.manifest.outputs.manifest-name }}
+
+      - name: Report deployment scaffold summary
+        run: |
+          {
+            echo "## Deployment Scaffold"
+            echo
+            echo "- Environment: ${{ inputs.environment }}"
+            echo "- Component: ${{ inputs.component }}"
+            echo "- Artifact kind: ${{ inputs.artifact-kind }}"
+            echo "- Artifact ref: ${{ inputs.artifact-ref }}"
+            echo "- Deploy repository: ${{ inputs.deploy-repository }}"
+            if [[ -n "${{ inputs.smoke-target }}" ]]; then
+              echo "- Smoke target: ${{ inputs.smoke-target }}"
+            fi
+            if [[ -n "${{ inputs.notes }}" ]]; then
+              echo "- Notes: ${{ inputs.notes }}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
