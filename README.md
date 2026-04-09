@@ -36,6 +36,7 @@ Current reusable workflows:
 - `reusable-node-validation.yml`
 - `reusable-gradle-validation.yml`
 - `reusable-docker-build.yml`
+- `reusable-ecr-publish.yml`
 - `reusable-deployment-scaffold.yml`
 
 These workflows are intended to be called from application repositories with `workflow_call`.
@@ -44,6 +45,7 @@ Current scope:
 
 - repo-native validation steps for Python, Node, and Gradle projects
 - a reusable Docker build block for image creation and optional registry push once the caller workflow has already handled any required registry authentication
+- a reusable ECR publication block for AWS OIDC login, ECR authentication, tagging, and image push
 - a reusable deployment scaffold that records the intended environment, component, and artifact reference until the dedicated deployment repository is in place
 
 Not in scope yet:
@@ -53,9 +55,9 @@ Not in scope yet:
 - Android release publication
 - iOS/TestFlight publication
 
-The current package layer is expected to live in the application repositories as thin caller workflows, while deployment remains scaffold-only until the dedicated deployment repository exists.
+The current package and publish layers are expected to live in the application repositories as thin caller workflows, while environment deployment lives in the dedicated deployment repository.
 
-The deployment scaffold is intentionally limited to producing a deployment manifest artifact and a job summary. It is not a substitute for the future deployment repository.
+The deployment scaffold is intentionally limited to producing a deployment manifest artifact and a job summary. It is not a substitute for the deployment repository.
 
 ## Licensing Scope
 

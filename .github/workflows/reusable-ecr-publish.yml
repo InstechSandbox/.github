@@ -1,0 +1,122 @@
+name: Reusable ECR Publish
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: GitHub-hosted runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      aws-region:
+        description: AWS region hosting the target ECR repository.
+        required: true
+        type: string
+      aws-role-arn:
+        description: AWS IAM role to assume through GitHub OIDC.
+        required: true
+        type: string
+      repository-name:
+        description: ECR repository name without the registry hostname.
+        required: true
+        type: string
+      image-name:
+        description: Human-readable image name for logs and metadata.
+        required: true
+        type: string
+      docker-context:
+        description: Docker build context path.
+        required: false
+        type: string
+        default: .
+      dockerfile:
+        description: Dockerfile path relative to the repository root.
+        required: false
+        type: string
+        default: Dockerfile
+      tags:
+        description: Newline-delimited short tags to publish to ECR.
+        required: true
+        type: string
+    outputs:
+      image-digest:
+        description: Digest returned by docker/build-push-action.
+        value: ${{ jobs.publish.outputs.image-digest }}
+      registry:
+        description: Authenticated ECR registry hostname.
+        value: ${{ jobs.publish.outputs.registry }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      image-digest: ${{ steps.publish.outputs.digest }}
+      registry: ${{ steps.login.outputs.registry }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.aws-role-arn }}
+
+      - name: Log in to Amazon ECR
+        id: login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Resolve ECR tags
+        id: tags
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+          REGISTRY: ${{ steps.login.outputs.registry }}
+          REPOSITORY_NAME: ${{ inputs.repository-name }}
+        run: |
+          mapped_tags="$(mktemp)"
+          while IFS= read -r tag; do
+            [[ -z "$tag" ]] && continue
+            printf '%s/%s:%s\n' "$REGISTRY" "$REPOSITORY_NAME" "$tag" >> "$mapped_tags"
+          done <<'EOF'
+          ${{ inputs.tags }}
+          EOF
+
+          {
+            echo 'tags<<EOF'
+            cat "$mapped_tags"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: publish
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.docker-context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+
+      - name: Report publish summary
+        run: |
+          {
+            echo "## ECR Publish"
+            echo
+            echo "- Image: ${{ inputs.image-name }}"
+            echo "- Registry: ${{ steps.login.outputs.registry }}"
+            echo "- Repository: ${{ inputs.repository-name }}"
+            echo "- Tags:"
+            while IFS= read -r tag; do
+              [[ -n "$tag" ]] && echo "  - $tag"
+            done <<'EOF'
+          ${{ steps.tags.outputs.tags }}
+          EOF
+            echo "- Digest: ${{ steps.publish.outputs.digest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
