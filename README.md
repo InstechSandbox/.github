@@ -26,6 +26,33 @@ The `.github` repository must also remain public for the organization profile RE
 - Cloud build and AWS deployment design: `InstechSandbox/project-docs/docs/Cloud_Build_Deployment_Runbook.md`
 - Deep local deployment rationale: `InstechSandbox/project-docs/docs/Local_Deployment_Notes.md`
 
+## Reusable Workflow Foundation
+
+The first reusable GitHub Actions workflow foundation for the `cloud-build` stream now lives under `.github/workflows` in this repository.
+
+Current reusable workflows:
+
+- `reusable-python-validation.yml`
+- `reusable-node-validation.yml`
+- `reusable-gradle-validation.yml`
+- `reusable-docker-build.yml`
+
+These workflows are intended to be called from application repositories with `workflow_call`.
+
+Current scope:
+
+- repo-native validation steps for Python, Node, and Gradle projects
+- a reusable Docker build block for image creation and optional registry push once the caller workflow has already handled any required registry authentication
+
+Not in scope yet:
+
+- application-specific deployment logic
+- environment orchestration for AWS `test`
+- Android release publication
+- iOS/TestFlight publication
+
+Those remain the next layers to add once each application repository has a thin caller workflow and stable packaging inputs.
+
 ## Licensing Scope
 
 The license in this repository applies only to the `.github` repository content, such as the organization profile README and repository guidance.

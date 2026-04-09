@@ -1,0 +1,52 @@
+name: Reusable Gradle Validation
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: GitHub-hosted runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      java-version:
+        description: Java version used for the validation run.
+        required: false
+        type: string
+        default: '17'
+      java-distribution:
+        description: JDK distribution passed to setup-java.
+        required: false
+        type: string
+        default: temurin
+      working-directory:
+        description: Repository subdirectory to run commands from.
+        required: false
+        type: string
+        default: .
+      gradle-command:
+        description: Gradle command to run, relative to the working directory.
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: ${{ inputs.runner }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ inputs.java-distribution }}
+          java-version: ${{ inputs.java-version }}
+          cache: gradle
+
+      - name: Validate with Gradle
+        run: ${{ inputs.gradle-command }}

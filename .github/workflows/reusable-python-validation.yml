@@ -1,0 +1,59 @@
+name: Reusable Python Validation
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: GitHub-hosted runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      python-version:
+        description: Python version used for the validation run.
+        required: false
+        type: string
+        default: '3.11'
+      working-directory:
+        description: Repository subdirectory to run commands from.
+        required: false
+        type: string
+        default: .
+      install-command:
+        description: Shell command that installs validation dependencies.
+        required: true
+        type: string
+      validate-command:
+        description: Shell command that runs deterministic validation checks.
+        required: true
+        type: string
+      cache-dependency-path:
+        description: Optional dependency file path for pip cache invalidation.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  validate:
+    runs-on: ${{ inputs.runner }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
+      - name: Run validation
+        run: ${{ inputs.validate-command }}

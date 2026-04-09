@@ -1,0 +1,59 @@
+name: Reusable Node Validation
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: GitHub-hosted runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      node-version:
+        description: Node.js version used for the validation run.
+        required: false
+        type: string
+        default: '20'
+      working-directory:
+        description: Repository subdirectory to run commands from.
+        required: false
+        type: string
+        default: .
+      install-command:
+        description: Shell command that installs dependencies.
+        required: true
+        type: string
+      validate-command:
+        description: Shell command that runs deterministic validation checks.
+        required: true
+        type: string
+      cache-dependency-path:
+        description: Optional lockfile path for dependency cache invalidation.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  validate:
+    runs-on: ${{ inputs.runner }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
+      - name: Run validation
+        run: ${{ inputs.validate-command }}

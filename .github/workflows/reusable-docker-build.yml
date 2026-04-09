@@ -1,0 +1,75 @@
+name: Reusable Docker Build
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: GitHub-hosted runner label.
+        required: false
+        type: string
+        default: ubuntu-latest
+      image-name:
+        description: Human-readable image name for logs and metadata.
+        required: true
+        type: string
+      docker-context:
+        description: Docker build context path.
+        required: false
+        type: string
+        default: .
+      dockerfile:
+        description: Dockerfile path relative to the repository root.
+        required: false
+        type: string
+        default: Dockerfile
+      push:
+        description: Whether to push the built image to a registry.
+        required: false
+        type: boolean
+        default: false
+      tags:
+        description: Newline-delimited Docker image tags.
+        required: true
+        type: string
+    outputs:
+      image-digest:
+        description: Digest returned by docker/build-push-action.
+        value: ${{ jobs.build.outputs.image-digest }}
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.docker-context }}
+          file: ${{ inputs.dockerfile }}
+          push: ${{ inputs.push }}
+          tags: ${{ inputs.tags }}
+
+      - name: Report build summary
+        run: |
+          {
+            echo "## Docker Build"
+            echo
+            echo "- Image: ${{ inputs.image-name }}"
+            echo "- Tags:"
+            while IFS= read -r tag; do
+              [[ -n "$tag" ]] && echo "  - $tag"
+            done <<'EOF'
+          ${{ inputs.tags }}
+          EOF
+            echo "- Push: ${{ inputs.push }}"
+            echo "- Digest: ${{ steps.build.outputs.digest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
