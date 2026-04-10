@@ -5,6 +5,8 @@
 - This repo is for organization-level shared documentation and future shared workflow assets. Do not add product-specific runtime logic here.
 - If shared workflow, governance, or engineering policy behaviour changes, update `project-docs` in the same task.
 - Prefer additive, reviewable conventions over hidden automation.
+- For the `cloud-build` stream, prefer the most cost-efficient approach that still delivers the agreed outcome: a public-internet end-to-end credential issuance and proof flow using the mobile wallet against the deployed cloud services.
+- Avoid introducing recurring cloud cost or fixed-cost infrastructure earlier than needed; prefer the smallest viable public demo footprint before adding cleaner but more expensive platform layers.
 
 ## Local Checks
 
