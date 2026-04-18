@@ -1,0 +1,297 @@
+name: Reusable Test Runtime Deploy
+
+on:
+  workflow_call:
+    inputs:
+      deploy-repository:
+        description: Repository containing the test runtime Terraform and helper scripts.
+        required: false
+        type: string
+        default: InstechSandbox/instechsandbox-eudi-deploy
+      deploy-ref:
+        description: Git ref of the deploy repository to check out.
+        required: false
+        type: string
+        default: main
+      aws-region:
+        description: AWS region for the shared test runtime scaffold.
+        required: true
+        type: string
+      aws-role-arn:
+        description: AWS IAM role ARN to assume through GitHub OIDC.
+        required: true
+        type: string
+      runtime-backend-bucket:
+        description: S3 bucket for the runtime Terraform state.
+        required: true
+        type: string
+      runtime-backend-key:
+        description: S3 object key for the runtime Terraform state.
+        required: false
+        type: string
+        default: iac/environments/test-runtime/terraform.tfstate
+      runtime-backend-dynamodb-table:
+        description: Optional DynamoDB table for runtime Terraform state locking.
+        required: false
+        type: string
+        default: ''
+      foundation-state-bucket:
+        description: S3 bucket holding the foundation Terraform state.
+        required: true
+        type: string
+      foundation-state-key:
+        description: S3 object key for the foundation Terraform state.
+        required: false
+        type: string
+        default: iac/environments/test/terraform.tfstate
+      manifest-path:
+        description: Deployment manifest to consume.
+        required: false
+        type: string
+        default: deploy/manifests/test/test-environment.json
+      runtime-config-path:
+        description: Optional runtime configuration manifest with per-component environment variables and secret references.
+        required: false
+        type: string
+        default: deploy/manifests/test/test-runtime-config.json
+      runtime-config-profile:
+        description: Optional generated runtime profile to render from the base domain. Supported values are verifier-first, issuer-first, and full-public-demo.
+        required: false
+        type: string
+        default: ''
+      public-ingress-enabled:
+        description: Whether to create the shared public ALB, ACM certificate wiring, and Route 53 aliases.
+        required: false
+        type: string
+        default: 'false'
+      public-base-domain:
+        description: Base public DNS suffix for runtime hosts, for example test.example.com.
+        required: false
+        type: string
+        default: ''
+      public-hosted-zone-id:
+        description: Route 53 hosted zone id used for DNS validation and alias records.
+        required: false
+        type: string
+        default: ''
+      public-certificate-arn:
+        description: Optional ACM certificate ARN to reuse instead of requesting a new one.
+        required: false
+        type: string
+        default: ''
+      issuer-auth-server-ref:
+        description: Optional immutable image reference for issuer auth server.
+        required: false
+        type: string
+        default: ''
+      issuer-backend-ref:
+        description: Optional immutable image reference for issuer backend.
+        required: false
+        type: string
+        default: ''
+      issuer-frontend-ref:
+        description: Optional immutable image reference for issuer frontend.
+        required: false
+        type: string
+        default: ''
+      verifier-backend-ref:
+        description: Optional immutable image reference for verifier backend.
+        required: false
+        type: string
+        default: ''
+      verifier-ui-ref:
+        description: Optional immutable image reference for verifier UI.
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: test-runtime-scaffold
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: true
+      TF_INPUT: false
+
+    steps:
+      - name: Check out deploy repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.deploy-repository }}
+          ref: ${{ inputs.deploy-ref }}
+
+      - name: Resolve runtime manifest path
+        id: manifest
+        env:
+          INPUT_MANIFEST_PATH: ${{ inputs.manifest-path }}
+          ISSUER_AUTH_SERVER_REF: ${{ inputs.issuer-auth-server-ref }}
+          ISSUER_BACKEND_REF: ${{ inputs.issuer-backend-ref }}
+          ISSUER_FRONTEND_REF: ${{ inputs.issuer-frontend-ref }}
+          VERIFIER_BACKEND_REF: ${{ inputs.verifier-backend-ref }}
+          VERIFIER_UI_REF: ${{ inputs.verifier-ui-ref }}
+        run: |
+          generated_manifest="$RUNNER_TEMP/test-runtime.generated.json"
+
+          if [[ -n "$ISSUER_AUTH_SERVER_REF" || -n "$ISSUER_BACKEND_REF" || -n "$ISSUER_FRONTEND_REF" || -n "$VERIFIER_BACKEND_REF" || -n "$VERIFIER_UI_REF" ]]; then
+            python3 deploy/scripts/render_test_environment_manifest.py \
+              --output "$generated_manifest" \
+              --base-manifest "$INPUT_MANIFEST_PATH" \
+              --issuer-auth-server-ref "$ISSUER_AUTH_SERVER_REF" \
+              --issuer-backend-ref "$ISSUER_BACKEND_REF" \
+              --issuer-frontend-ref "$ISSUER_FRONTEND_REF" \
+              --verifier-backend-ref "$VERIFIER_BACKEND_REF" \
+              --verifier-ui-ref "$VERIFIER_UI_REF"
+            echo "manifest-path=$generated_manifest" >> "$GITHUB_OUTPUT"
+            echo "manifest-source=workflow-inputs" >> "$GITHUB_OUTPUT"
+          else
+            echo "manifest-path=$INPUT_MANIFEST_PATH" >> "$GITHUB_OUTPUT"
+            echo "manifest-source=repository-file" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.aws-role-arn }}
+
+      - name: Resolve artifact references to immutable digests
+        id: resolved-manifest
+        env:
+          MANIFEST_PATH: ${{ steps.manifest.outputs.manifest-path }}
+          AWS_REGION: ${{ inputs.aws-region }}
+        run: |
+          resolved_manifest="$RUNNER_TEMP/test-runtime.resolved.json"
+          python3 deploy/scripts/resolve_test_environment_artifact_refs.py \
+            --manifest "$MANIFEST_PATH" \
+            --aws-region "$AWS_REGION" \
+            --output "$resolved_manifest"
+          echo "manifest-path=$resolved_manifest" >> "$GITHUB_OUTPUT"
+
+      - name: Render runtime tfvars
+        id: runtime-config
+        env:
+          MANIFEST_PATH: ${{ steps.resolved-manifest.outputs.manifest-path }}
+          RUNTIME_CONFIG_INPUT_PATH: ${{ inputs.runtime-config-path }}
+          RUNTIME_CONFIG_PROFILE: ${{ inputs.runtime-config-profile }}
+          PUBLIC_BASE_DOMAIN: ${{ inputs.public-base-domain }}
+        run: |
+          runtime_config_path="$RUNTIME_CONFIG_INPUT_PATH"
+
+          if [[ -n "$RUNTIME_CONFIG_PROFILE" ]]; then
+            if [[ -z "$PUBLIC_BASE_DOMAIN" ]]; then
+              echo "public-base-domain is required when runtime-config-profile is set" >&2
+              exit 1
+            fi
+
+            generated_runtime_config="$RUNNER_TEMP/test-runtime.generated-config.json"
+            python3 deploy/scripts/render_test_runtime_config.py \
+              --base-config "$RUNTIME_CONFIG_INPUT_PATH" \
+              --base-domain "$PUBLIC_BASE_DOMAIN" \
+              --profile "$RUNTIME_CONFIG_PROFILE" \
+              --output "$generated_runtime_config"
+            runtime_config_path="$generated_runtime_config"
+          fi
+
+          echo "runtime-config-path=$runtime_config_path" >> "$GITHUB_OUTPUT"
+
+          python3 deploy/scripts/render_test_runtime_tfvars.py \
+            --manifest "$MANIFEST_PATH" \
+            --runtime-config "$runtime_config_path" \
+            --output "$RUNNER_TEMP/test-runtime.auto.tfvars.json"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive iac/environments/test-runtime iac/modules/test_runtime
+
+      - name: Initialize runtime scaffold root
+        working-directory: iac/environments/test-runtime
+        run: |
+          init_args=(
+            -backend-config="bucket=${{ inputs.runtime-backend-bucket }}"
+            -backend-config="key=${{ inputs.runtime-backend-key }}"
+            -backend-config="region=${{ inputs.aws-region }}"
+            -backend-config="encrypt=true"
+          )
+
+          if [[ -n "${{ inputs.runtime-backend-dynamodb-table }}" ]]; then
+            init_args+=("-backend-config=dynamodb_table=${{ inputs.runtime-backend-dynamodb-table }}")
+          fi
+
+          terraform init "${init_args[@]}"
+
+      - name: Validate runtime scaffold root
+        working-directory: iac/environments/test-runtime
+        run: terraform validate
+
+      - name: Plan runtime scaffold deployment
+        working-directory: iac/environments/test-runtime
+        run: |
+          terraform plan \
+            -out=tfplan \
+            -var aws_region=${{ inputs.aws-region }} \
+            -var foundation_state_bucket=${{ inputs.foundation-state-bucket }} \
+            -var foundation_state_key=${{ inputs.foundation-state-key }} \
+            -var foundation_state_region=${{ inputs.aws-region }} \
+            -var public_ingress_enabled=${{ inputs.public-ingress-enabled }} \
+            -var public_base_domain='${{ inputs.public-base-domain }}' \
+            -var public_hosted_zone_id='${{ inputs.public-hosted-zone-id }}' \
+            -var public_certificate_arn='${{ inputs.public-certificate-arn }}' \
+            -var-file="$RUNNER_TEMP/test-runtime.auto.tfvars.json"
+
+      - name: Apply runtime scaffold deployment
+        working-directory: iac/environments/test-runtime
+        run: terraform apply -auto-approve tfplan
+
+      - name: Capture Terraform outputs
+        working-directory: iac/environments/test-runtime
+        run: terraform output -json > terraform-outputs.json
+
+      - name: Upload runtime scaffold outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-runtime-outputs
+          path: iac/environments/test-runtime/terraform-outputs.json
+          if-no-files-found: warn
+
+      - name: Report runtime scaffold summary
+        working-directory: iac/environments/test-runtime
+        env:
+          MANIFEST_SOURCE: ${{ steps.manifest.outputs.manifest-source }}
+          AWS_REGION: ${{ inputs.aws-region }}
+          RUNTIME_CONFIG_PATH: ${{ steps.runtime-config.outputs.runtime-config-path }}
+          RUNTIME_CONFIG_PROFILE: ${{ inputs.runtime-config-profile }}
+          RESOLVED_MANIFEST_PATH: ${{ steps.resolved-manifest.outputs.manifest-path }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          outputs = json.loads(Path("terraform-outputs.json").read_text(encoding="utf-8"))
+
+          def value(name):
+              return outputs.get(name, {}).get("value")
+
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as handle:
+              handle.write("## Test Runtime Scaffold\n\n")
+              handle.write(f"- AWS region: {os.environ['AWS_REGION']}\n")
+              handle.write(f"- Manifest source: {os.environ['MANIFEST_SOURCE']}\n")
+              handle.write(f"- Resolved manifest: {os.environ['RESOLVED_MANIFEST_PATH']}\n")
+              handle.write(f"- Runtime config: {os.environ['RUNTIME_CONFIG_PATH']}\n")
+              handle.write(f"- Runtime config profile: {os.environ['RUNTIME_CONFIG_PROFILE'] or 'repository-file'}\n")
+              handle.write(f"- Runtime VPC: {value('runtime_vpc_id')}\n")
+              handle.write(f"- Public subnets: {value('runtime_public_subnet_ids')}\n")
+              handle.write(f"- Service security group: {value('runtime_service_security_group_id')}\n")
+              handle.write(f"- ECS services: {value('runtime_ecs_service_names')}\n")
+              handle.write(f"- Public ALB: {value('runtime_public_alb_dns_name')}\n")
+              handle.write(f"- Public hosts: {value('runtime_public_component_hostnames')}\n")
+          PY
