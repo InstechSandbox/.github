@@ -104,6 +104,10 @@ on:
         required: false
         type: string
         default: ''
+    secrets:
+      DEPLOY_REPOSITORY_TOKEN:
+        description: Optional token with read access to the deploy repository for cross-repo checkout.
+        required: false
 
 permissions:
   contents: read
@@ -126,6 +130,7 @@ jobs:
         with:
           repository: ${{ inputs.deploy-repository }}
           ref: ${{ inputs.deploy-ref }}
+          token: ${{ secrets.DEPLOY_REPOSITORY_TOKEN || github.token }}
 
       - name: Resolve runtime manifest path
         id: manifest
