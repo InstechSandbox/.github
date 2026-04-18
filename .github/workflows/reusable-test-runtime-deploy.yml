@@ -241,6 +241,7 @@ jobs:
         working-directory: iac/environments/test-runtime
         run: |
           terraform plan \
+            -lock-timeout=10m \
             -out=tfplan \
             -var aws_region=${{ inputs.aws-region }} \
             -var foundation_state_bucket=${{ inputs.foundation-state-bucket }} \
@@ -254,7 +255,7 @@ jobs:
 
       - name: Apply runtime scaffold deployment
         working-directory: iac/environments/test-runtime
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -lock-timeout=10m -auto-approve tfplan
 
       - name: Capture Terraform outputs
         working-directory: iac/environments/test-runtime
