@@ -59,6 +59,11 @@ on:
         required: false
         type: string
         default: ''
+      allow-zero-desired-counts:
+        description: Allow a deliberate runtime apply that leaves every ECS service at desired_count 0.
+        required: false
+        type: boolean
+        default: false
       public-ingress-enabled:
         description: Whether to create the shared public ALB, ACM certificate wiring, and Route 53 aliases.
         required: false
@@ -185,6 +190,7 @@ jobs:
           MANIFEST_PATH: ${{ steps.resolved-manifest.outputs.manifest-path }}
           RUNTIME_CONFIG_INPUT_PATH: ${{ inputs.runtime-config-path }}
           RUNTIME_CONFIG_PROFILE: ${{ inputs.runtime-config-profile }}
+          ALLOW_ZERO_DESIRED_COUNTS: ${{ inputs.allow-zero-desired-counts }}
           PUBLIC_BASE_DOMAIN: ${{ inputs.public-base-domain }}
         run: |
           runtime_config_path="$RUNTIME_CONFIG_INPUT_PATH"
@@ -206,10 +212,18 @@ jobs:
 
           echo "runtime-config-path=$runtime_config_path" >> "$GITHUB_OUTPUT"
 
-          python3 deploy/scripts/render_test_runtime_tfvars.py \
-            --manifest "$MANIFEST_PATH" \
-            --runtime-config "$runtime_config_path" \
+          tfvars_args=(
+            --manifest "$MANIFEST_PATH"
+            --runtime-config "$runtime_config_path"
             --output "$RUNNER_TEMP/test-runtime.auto.tfvars.json"
+          )
+
+          if [[ "$ALLOW_ZERO_DESIRED_COUNTS" == "true" ]]; then
+            tfvars_args+=(--allow-zero-desired-counts)
+          fi
+
+          python3 deploy/scripts/render_test_runtime_tfvars.py \
+            "${tfvars_args[@]}"
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -272,6 +286,7 @@ jobs:
         working-directory: iac/environments/test-runtime
         env:
           MANIFEST_SOURCE: ${{ steps.manifest.outputs.manifest-source }}
+          ALLOW_ZERO_DESIRED_COUNTS: ${{ inputs.allow-zero-desired-counts }}
           AWS_REGION: ${{ inputs.aws-region }}
           RUNTIME_CONFIG_PATH: ${{ steps.runtime-config.outputs.runtime-config-path }}
           RUNTIME_CONFIG_PROFILE: ${{ inputs.runtime-config-profile }}
@@ -294,6 +309,7 @@ jobs:
               handle.write(f"- Resolved manifest: {os.environ['RESOLVED_MANIFEST_PATH']}\n")
               handle.write(f"- Runtime config: {os.environ['RUNTIME_CONFIG_PATH']}\n")
               handle.write(f"- Runtime config profile: {os.environ['RUNTIME_CONFIG_PROFILE'] or 'repository-file'}\n")
+              handle.write(f"- Allow zero desired counts: {os.environ['ALLOW_ZERO_DESIRED_COUNTS']}\n")
               handle.write(f"- Runtime VPC: {value('runtime_vpc_id')}\n")
               handle.write(f"- Public subnets: {value('runtime_public_subnet_ids')}\n")
               handle.write(f"- Service security group: {value('runtime_service_security_group_id')}\n")
