@@ -125,6 +125,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       TF_IN_AUTOMATION: true
       TF_INPUT: false
@@ -270,6 +271,55 @@ jobs:
       - name: Apply runtime scaffold deployment
         working-directory: iac/environments/test-runtime
         run: terraform apply -lock-timeout=10m -auto-approve tfplan
+
+      - name: Verify issuer request-encryption key alignment
+        if: ${{ inputs.public-ingress-enabled == 'true' && inputs.public-base-domain != '' }}
+        env:
+          PUBLIC_BASE_DOMAIN: ${{ inputs.public-base-domain }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.request
+
+          base_domain = os.environ["PUBLIC_BASE_DOMAIN"]
+          frontend_url = f"https://issuer.{base_domain}/.well-known/openid-credential-issuer"
+          backend_url = f"https://issuer-api.{base_domain}/.well-known/openid-credential-issuer"
+
+          def load_metadata(url: str) -> dict:
+            with urllib.request.urlopen(url, timeout=20) as response:
+              return json.load(response)
+
+          def normalized_first_key(document: dict) -> dict:
+            keys = (
+              document.get("credential_request_encryption", {})
+              .get("jwks", {})
+              .get("keys", [])
+            )
+            if not keys or not isinstance(keys[0], dict):
+              raise SystemExit("credential_request_encryption.jwks.keys[0] missing")
+            key = keys[0]
+            return {
+              field: key.get(field)
+              for field in ("kty", "crv", "x", "y", "kid", "alg", "use")
+              if field in key
+            }
+
+          frontend_key = normalized_first_key(load_metadata(frontend_url))
+          backend_key = normalized_first_key(load_metadata(backend_url))
+
+          if frontend_key != backend_key:
+            print("Frontend and backend issuer metadata publish different request-encryption JWKs.")
+            print(f"frontend={frontend_key}")
+            print(f"backend={backend_key}")
+            sys.exit(1)
+
+          print(
+            "Issuer request-encryption metadata aligned: "
+            f"kid={frontend_key.get('kid')} alg={frontend_key.get('alg')}"
+          )
+          PY
 
       - name: Capture Terraform outputs
         working-directory: iac/environments/test-runtime
