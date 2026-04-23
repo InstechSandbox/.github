@@ -1,16 +1,15 @@
 # EUDI / eIDAS Digital Identity Insurance Readiness
 
-This organization contains a Phase 1 proof-of-concept environment focused on ecosystem readiness for the European Digital Identity Wallet (EUDI Wallet) in an Irish insurance context.
+This organization contains a verifier-first proof-of-concept reference implementation focused on ecosystem readiness for the European Digital Identity Wallet in an Irish insurance context.
 
-The European Union's revised eIDAS Regulation establishes a framework for a European Digital Identity Wallet that allows citizens and businesses to hold and share verified digital credentials across Member States.
-
-In Ireland, this creates a practical need for insurers and other financial services firms to understand how wallet-based credentials could affect onboarding, identity verification, and future issuer or relying-party responsibilities.
+The current public demonstration is framed as an Emerald Insurance journey set running against a shared public `test` environment. It is intended to help insurers, delivery teams, and evaluators understand how wallet-based credentials could affect onboarding, identity verification, verifier trust policy, and future Government-led sandbox integration.
 
 InsTech.ie is using this project to support structured industry readiness by:
 
-- building a shared understanding of EUDI Wallet impacts on insurance journeys
+- building a shared understanding of wallet impacts on insurance journeys
 - developing a practical reference implementation based on open standards
-- helping insurers prepare for future government-led testing and integration phases
+- demonstrating a verifier-led integration posture that customers can build, run, and assess
+- helping insurers prepare for future Government-led testing and integration phases
 
 ## Phase 1 Scope
 
@@ -18,36 +17,56 @@ This phase is focused on:
 
 - ecosystem readiness
 - reference implementation development
-- local end-to-end issuance and verification experimentation
+- local and cloud end-to-end issuance and verification experimentation
 - documenting integration constraints, deployment decisions, and known working baselines
 
 This work is a proof of concept and is not production-ready.
 
+## Start Here
+
+If you want to:
+
+- understand what wallets mean for insurers operationally, start with [Insurer Readiness Pack](https://github.com/InstechSandbox/project-docs/blob/main/docs/Insurer_Readiness_Pack.md)
+- understand the current public system shape, start with [Emerald Insurance Public Cloud Architecture](https://github.com/InstechSandbox/project-docs/blob/main/docs/Emerald_Insurance_Public_Cloud_Architecture.md)
+- install the wallet and run the public demo journeys, use [Stakeholder Wallet Demo Guide](https://github.com/InstechSandbox/project-docs/blob/main/docs/Stakeholder_Wallet_Demo_Guide.md)
+- understand the standards and protocol profile choices behind the PoC, read [Reference Implementation Standards Summary](https://github.com/InstechSandbox/project-docs/blob/main/docs/Reference_Implementation_Standards_Summary.md)
+- understand the current scope and boundaries of the demonstrator, read [Current PoC Scope](https://github.com/InstechSandbox/project-docs/blob/main/docs/Current_PoC_Scope.md)
+
 ## Repositories
 
+Primary delivery surfaces in the current proof of concept:
+
 - [eudi-app-android-wallet-ui](https://github.com/InstechSandbox/eudi-app-android-wallet-ui) - Android wallet used for local issuance and verifier presentation testing, and small-scale tester distribution
-- [eudi-app-ios-wallet-ui](https://github.com/InstechSandbox/eudi-app-ios-wallet-ui) - iOS wallet fork being enabled for local issuance, presentation, and small-scale tester distribution
-- [eudi-srv-issuer-oidc-py](https://github.com/InstechSandbox/eudi-srv-issuer-oidc-py) - local OAuth and authorization server used by the issuance flow
-- [eudi-srv-web-issuing-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-eudiw-py) - credential issuer backend
-- [eudi-srv-web-issuing-frontend-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-frontend-eudiw-py) - issuer frontend and metadata surface
 - [av-srv-web-verifier-endpoint-23220-4-kt](https://github.com/InstechSandbox/av-srv-web-verifier-endpoint-23220-4-kt) - verifier backend and OpenID4VP request handling
 - [eudi-web-verifier](https://github.com/InstechSandbox/eudi-web-verifier) - verifier web UI
+- [project-docs](https://github.com/InstechSandbox/project-docs) - cross-repository documentation for this initiative
+
+Supporting reference implementation components in the current proof of concept:
+
+- [eudi-app-ios-wallet-ui](https://github.com/InstechSandbox/eudi-app-ios-wallet-ui) - iOS wallet fork being enabled for local issuance, presentation, and small-scale tester distribution
+- [eudi-srv-issuer-oidc-py](https://github.com/InstechSandbox/eudi-srv-issuer-oidc-py) - authorization server used by the issuance flow
+- [eudi-srv-web-issuing-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-eudiw-py) - credential issuer backend
+- [eudi-srv-web-issuing-frontend-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-frontend-eudiw-py) - issuer frontend and metadata surface
 - [project-docs](https://github.com/InstechSandbox/project-docs) - cross-repository documentation for this initiative
 
 ## Documentation
 
 - [Project Docs Landing Page](https://github.com/InstechSandbox/project-docs)
-- [Local Deployment Notes](https://github.com/InstechSandbox/project-docs/blob/main/docs/Local_Deployment_Notes.md)
-- [Licensing Notes](https://github.com/InstechSandbox/project-docs/blob/main/docs/Licensing_Notes.md)
-- [Mobile App Distribution Compliance](https://github.com/InstechSandbox/project-docs/blob/main/docs/Mobile_App_Distribution_Compliance.md)
+- [Insurer Readiness Pack](https://github.com/InstechSandbox/project-docs/blob/main/docs/Insurer_Readiness_Pack.md)
+- [Emerald Insurance Public Cloud Architecture](https://github.com/InstechSandbox/project-docs/blob/main/docs/Emerald_Insurance_Public_Cloud_Architecture.md)
+- [Stakeholder Wallet Demo Guide](https://github.com/InstechSandbox/project-docs/blob/main/docs/Stakeholder_Wallet_Demo_Guide.md)
+- [Reference Implementation Standards Summary](https://github.com/InstechSandbox/project-docs/blob/main/docs/Reference_Implementation_Standards_Summary.md)
+- [Cloud Build And Deployment Runbook](https://github.com/InstechSandbox/project-docs/blob/main/docs/Cloud_Build_Deployment_Runbook.md)
 
-The Local Deployment Notes document explains the six-repository commit set that produced the current stable local working build, why those changes were necessary, and which baseline tags identify that state.
+The detailed runbooks, architecture notes, and baseline references remain in `project-docs` so the org profile can stay short and customer-readable.
 
 ## Current Baseline
 
-The current stable local working baseline is tagged in each of the six implementation repositories as:
+The current stable local working baseline is tagged in each of the six currently validated runtime repositories as:
 
 - `local-e2e-baseline-2026-03-27`
+
+The iOS wallet fork is now in scope for enablement and licensing tracking, but it is not yet part of the coordinated stable runtime baseline.
 
 See the project docs for the full tag and commit reference table.
 

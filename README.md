@@ -2,6 +2,8 @@
 
 This is the special `.github` repository for the `InstechSandbox` organization.
 
+If you are looking for the public proof-of-concept documentation, start with [InstechSandbox/project-docs](https://github.com/InstechSandbox/project-docs). That repository contains the public Emerald Insurance PoC overview, readiness pack, architecture, stakeholder demo guide, and deployment runbooks.
+
 ## What This Repo Does
 
 - `profile/README.md` controls the public GitHub organization landing page.
@@ -23,6 +25,7 @@ The `.github` repository must also remain public for the organization profile RE
 
 - Public org overview: `profile/README.md`
 - Cross-repo project documentation: `InstechSandbox/project-docs`
+- Public Emerald Insurance PoC overview and customer-facing docs: `InstechSandbox/project-docs`
 - Cloud build and AWS deployment design: `InstechSandbox/project-docs/docs/Cloud_Build_Deployment_Runbook.md`
 - Deep local deployment rationale: `InstechSandbox/project-docs/docs/Local_Deployment_Notes.md`
 
