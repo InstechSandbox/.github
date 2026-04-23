@@ -44,10 +44,16 @@ Primary delivery surfaces in the current proof of concept:
 Supporting reference implementation components in the current proof of concept:
 
 - [eudi-app-ios-wallet-ui](https://github.com/InstechSandbox/eudi-app-ios-wallet-ui) - iOS wallet fork being enabled for local issuance, presentation, and small-scale tester distribution
+- [eudi-lib-ios-wallet-kit](https://github.com/InstechSandbox/eudi-lib-ios-wallet-kit) - iOS wallet library fork tracked for wallet enablement and local source-level investigation when needed
 - [eudi-srv-issuer-oidc-py](https://github.com/InstechSandbox/eudi-srv-issuer-oidc-py) - authorization server used by the issuance flow
 - [eudi-srv-web-issuing-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-eudiw-py) - credential issuer backend
 - [eudi-srv-web-issuing-frontend-eudiw-py](https://github.com/InstechSandbox/eudi-srv-web-issuing-frontend-eudiw-py) - issuer frontend and metadata surface
+
+Shared delivery and documentation repositories:
+
+- [instechsandbox-eudi-deploy](https://github.com/InstechSandbox/instechsandbox-eudi-deploy) - public infrastructure and deployment repository for the shared AWS `test` environment
 - [project-docs](https://github.com/InstechSandbox/project-docs) - cross-repository documentation for this initiative
+- [.github](https://github.com/InstechSandbox/.github) - organization profile and shared reusable workflow foundation
 
 ## Documentation
 
