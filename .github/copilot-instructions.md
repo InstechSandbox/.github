@@ -4,6 +4,7 @@
 - Treat `project-docs/docs/EIDAS_ARF_Implementation_Brief.md` and `project-docs/docs/AI_Working_Agreement.md` as mandatory project constraints.
 - This repo is for organization-level shared documentation and future shared workflow assets. Do not add product-specific runtime logic here.
 - If shared workflow, governance, or engineering policy behaviour changes, update `project-docs` in the same task.
+- Default Git flow in this workspace is local `wip/<stream>` commits promoted into protected default branches through reviewed pull requests; do not publish remote `wip/<stream>` branches unless explicitly requested.
 - Prefer additive, reviewable conventions over hidden automation.
 - For the `cloud-build` stream, prefer the most cost-efficient approach that still delivers the agreed outcome: a public-internet end-to-end credential issuance and proof flow using the mobile wallet against the deployed cloud services.
 - Avoid introducing recurring cloud cost or fixed-cost infrastructure earlier than needed; prefer the smallest viable public demo footprint before adding cleaner but more expensive platform layers.
