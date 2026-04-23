@@ -26,8 +26,19 @@ The `.github` repository must also remain public for the organization profile RE
 - Public org overview: `profile/README.md`
 - Cross-repo project documentation: `InstechSandbox/project-docs`
 - Public Emerald Insurance PoC overview and customer-facing docs: `InstechSandbox/project-docs`
+- Shared contributor guidance: `CONTRIBUTING.md`
+- Shared governance and maintainer model: `GOVERNANCE.md`
+- Shared security reporting guidance: `SECURITY.md`
 - Cloud build and AWS deployment design: `InstechSandbox/project-docs/docs/Cloud_Build_Deployment_Runbook.md`
 - Deep local deployment rationale: `InstechSandbox/project-docs/docs/Local_Deployment_Notes.md`
+
+## Shared Community Guidance
+
+These files provide the default community health guidance for InstechSandbox repositories unless a repository defines a more specific local replacement:
+
+- `CONTRIBUTING.md`
+- `GOVERNANCE.md`
+- `SECURITY.md`
 
 ## Reusable Workflow Foundation
 
